@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Family Tree</title>
+    <!-- Use Tailwind CSS for a clean, modern design -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .loading-indicator {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .container {
+            transition: opacity 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="p-8">
+
+    <!-- Main Application Container -->
+    <div id="app-container" class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8 container opacity-0">
+
+        <!-- Header and Logout Button -->
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">My Family Tree App 🌳</h1>
+            <button id="logout-btn" class="bg-red-500 text-white font-semibold p-2 px-4 rounded-lg hover:bg-red-600 transition duration-300 hidden">Log Out</button>
+        </div>
+        <p id="user-id-display" class="text-sm text-gray-500 mb-4 hidden">User ID: </p>
+
+        <!-- Login/Signup Section -->
+        <div id="auth-section">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4 text-center">Sign In or Sign Up</h2>
+            <form id="auth-form" class="space-y-4 max-w-sm mx-auto">
+                <input type="email" id="auth-email" placeholder="Email" class="p-3 w-full border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                <input type="password" id="auth-password" placeholder="Password" class="p-3 w-full border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                <button type="submit" id="auth-submit-btn" class="w-full bg-blue-600 text-white font-semibold p-3 rounded-lg hover:bg-blue-700 transition duration-300">
+                    Sign In
+                </button>
+            </form>
+            <div class="text-center mt-4 text-sm">
+                <p>Don't have an account? <button id="toggle-auth-mode" class="text-blue-600 hover:text-blue-800 font-semibold">Sign up</button></p>
+            </div>
+        </div>
+
+        <!-- Family Tree Content Section (hidden initially) -->
+        <div id="family-tree-section" class="hidden">
+            <!-- Form to add a new family member -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-700 mb-4">Add a New Family Member</h2>
+                <form id="add-member-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    
+                    <!-- Salutation and Name -->
+                    <div class="md:col-span-1">
+                        <label for="salutation" class="block text-sm font-medium text-gray-700 mb-1">Salutation</label>
+                        <select id="salutation" class="p-3 w-full border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">None</option>
+                            <option value="Mr.">Mr.</option>
+                            <option value="Mrs.">Mrs.</option>
+                            <option value="Ms.">Ms.</option>
+                            <option value="Dr.">Dr.</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-1">
+                        <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                        <input type="text" id="name" placeholder="Name" class="p-3 w-full border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    
+                    <!-- Basic Details -->
+                    <div class="md:col-span-1">
+                        <label for="gender" class="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                        <select id="gender" class="p-3 w-full border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">Select Gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-1">
+                        <label for="dob" class="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+                        <input type="date" id="dob" class="p-3 w-full border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+
+                    <!-- Marital Status and Conditional Fields -->
+                    <div class="md:col-span-2">
+                        <label for="maritalStatus" class="block text-sm font-medium text-gray-700 mb-1">Marital Status</label>
+                        <select id="maritalStatus" class="p-3 w-full border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="Single">Single</option>
+                            <option value="Married">Married</option>
+                            <option value="Divorced">Divorced</option>
+                            <option value="Widowed">Widowed</option>
+                        </select>
+                    </div>
+                    <div id="marriage-details" class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
+                        <div>
+                            <label for="anniversary" class="block text-sm font-medium text-gray-700 mb-1">Marriage Anniversary</label>
+                            <input type="date" id="anniversary" class="p-3 w-full border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label for="spouseName" class="block text-sm font-medium text-gray-700 mb-1">Spouse's Name</label>
+                            <input type="text" id="spouseName" placeholder="Spouse's Full Name" class="p-3 w-full border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <!-- Contact & Professional Details -->
+                    <div class="md:col-span-1">
+                        <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                        <input type="text" id="phone" placeholder="Phone Number" class="p-3 w-full border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="md:col-span-1">
+                        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input type="email" id="email" placeholder="Email" class="p-3 w-full border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="address" class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                        <input type="text" id="address" placeholder="Address" class="p-3 w-full border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="photoUrl" class="block text-sm font-medium text-gray-700 mb-1">Photo URL</label>
+                        <input type="url" id="photoUrl" placeholder="Link to a photo (e.g., from Google Photos)" class="p-3 w-full border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="education" class="block text-sm font-medium text-gray-700 mb-1">Educational Qualification</label>
+                        <input type="text" id="education" placeholder="e.g., Master of Business Administration" class="p-3 w-full border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="md:col-span-1">
+                        <label for="profession" class="block text-sm font-medium text-gray-700 mb-1">Profession</label>
+                        <input type="text" id="profession" placeholder="Designation" class="p-3 w-full border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="md:col-span-1">
+                        <label for="placeOfJob" class="block text-sm font-medium text-gray-700 mb-1">Place of Job</label>
+                        <input type="text" id="placeOfJob" placeholder="Company Name" class="p-3 w-full border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+
+                    <button type="submit" class="col-span-full bg-blue-600 text-white font-semibold p-3 rounded-lg hover:bg-blue-700 transition duration-300">
+                        Add Member
+                    </button>
+                </form>
+            </div>
+
+            <!-- Section to display the family tree -->
+            <div>
+                <h2 class="text-xl font-semibold text-gray-700 mb-4">Family Tree Members</h2>
+                <div id="loading" class="flex justify-center items-center h-20">
+                    <div class="loading-indicator"></div>
+                </div>
+                <div id="family-tree-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Family members will be dynamically added here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom modal for alerts instead of `alert()` -->
+        <div id="custom-alert-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                <div class="mt-3 text-center">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900" id="custom-alert-title"></h3>
+                    <div class="mt-2 px-7 py-3">
+                        <p class="text-sm text-gray-500" id="custom-alert-message"></p>
+                    </div>
+                    <div class="items-center px-4 py-3">
+                        <button id="custom-alert-close" class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            OK
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase Modular SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { 
+            getAuth, 
+            onAuthStateChanged, 
+            createUserWithEmailAndPassword, 
+            signInWithEmailAndPassword,
+            signOut
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { 
+            getFirestore, 
+            collection, 
+            addDoc, 
+            deleteDoc, 
+            onSnapshot, 
+            doc,
+            serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        (async function() {
+            // --- Firebase Configuration and Initialization ---
+            const firebaseConfig = {
+                apiKey: "AIzaSyDETglpj89AdqZgk0MZs3noBQOeB7g0zHI",
+                authDomain: "family-tree-33908.firebaseapp.com",
+                projectId: "family-tree-33908",
+                storageBucket: "family-tree-33908.firebasestorage.app",
+                messagingSenderId: "893749465379",
+                appId: "1:893749465379:web:134534c65bf1c0e21e7c96"
+            };
+
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const firebaseConfigFromCanvas = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
+
+            // Initialize Firebase
+            const app = initializeApp(firebaseConfigFromCanvas);
+            const db = getFirestore(app);
+            const auth = getAuth(app);
+
+            let userId = null;
+            let unsubscribe = null; // To hold the onSnapshot listener
+
+            // Get references to key UI elements
+            const appContainer = document.getElementById('app-container');
+            const authSection = document.getElementById('auth-section');
+            const familyTreeSection = document.getElementById('family-tree-section');
+            const logoutBtn = document.getElementById('logout-btn');
+            const userIdDisplay = document.getElementById('user-id-display');
+
+            // --- UI Helper Functions ---
+            function showCustomAlert(title, message, onConfirm = null) {
+                const modal = document.getElementById('custom-alert-modal');
+                document.getElementById('custom-alert-title').innerText = title;
+                document.getElementById('custom-alert-message').innerText = message;
+                modal.classList.remove('hidden');
+
+                const closeBtn = document.getElementById('custom-alert-close');
+                closeBtn.onclick = () => {
+                    modal.classList.add('hidden');
+                    if (onConfirm) {
+                        onConfirm();
+                    }
+                };
+            }
+            
+            function showAppContent(user) {
+                if (user) {
+                    authSection.classList.add('hidden');
+                    familyTreeSection.classList.remove('hidden');
+                    logoutBtn.classList.remove('hidden');
+                    userIdDisplay.classList.remove('hidden');
+                    userIdDisplay.innerText = `User ID: ${user.uid}`;
+                    appContainer.style.opacity = 1;
+                } else {
+                    authSection.classList.remove('hidden');
+                    familyTreeSection.classList.add('hidden');
+                    logoutBtn.classList.add('hidden');
+                    userIdDisplay.classList.add('hidden');
+                    appContainer.style.opacity = 1;
+                }
+            }
+
+            // --- Authentication and Data Persistence ---
+            // Listen for authentication state changes
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    userId = user.uid;
+                    console.log("User signed in with ID:", userId);
+                    if (unsubscribe) {
+                        unsubscribe(); // Unsubscribe from old listener
+                    }
+                    startDataListener(userId);
+                } else {
+                    userId = null;
+                    console.log("User logged out or not signed in.");
+                    if (unsubscribe) {
+                        unsubscribe(); // Unsubscribe from old listener
+                    }
+                    document.getElementById('family-tree-list').innerHTML = '';
+                    document.getElementById('loading').classList.add('hidden');
+                }
+                showAppContent(user);
+            });
+
+            // --- Firestore Operations ---
+            function startDataListener(currentUserId) {
+                const collectionPath = `artifacts/${appId}/users/${currentUserId}/familyMembers`;
+                const membersCollection = collection(db, collectionPath);
+                
+                // Set up the real-time data listener and store the unsubscribe function
+                unsubscribe = onSnapshot(membersCollection, (querySnapshot) => {
+                    const familyMembers = [];
+                    querySnapshot.forEach((doc) => {
+                        familyMembers.push({ id: doc.id, ...doc.data() });
+                    });
+                    renderFamilyMembers(familyMembers);
+                    document.getElementById('loading').classList.add('hidden');
+                }, (error) => {
+                    console.error("Error getting documents: ", error);
+                    showCustomAlert('Error', 'Failed to load family members.');
+                    document.getElementById('loading').classList.add('hidden');
+                });
+            }
+
+            // Function to add a new family member to the database
+            const addMember = async (memberData) => {
+                if (!userId) {
+                    showCustomAlert('Error', 'You must be signed in to add members.');
+                    return;
+                }
+                try {
+                    const membersCollection = collection(db, `artifacts/${appId}/users/${userId}/familyMembers`);
+                    await addDoc(membersCollection, {
+                        ...memberData,
+                        createdAt: serverTimestamp()
+                    });
+                    showCustomAlert('Success', `${memberData.name} has been added to the family tree!`);
+                } catch (e) {
+                    console.error("Error adding document: ", e);
+                    showCustomAlert('Error', 'Failed to add the member. Please try again.');
+                }
+            };
+
+            // Function to delete a family member
+            const deleteMember = async (docId, name) => {
+                showCustomAlert('Confirm Deletion', `Are you sure you want to delete ${name}? This action cannot be undone.`, async () => {
+                    if (!userId) return;
+                    try {
+                        const memberDocRef = doc(db, `artifacts/${appId}/users/${userId}/familyMembers`, docId);
+                        await deleteDoc(memberDocRef);
+                        showCustomAlert('Success', `${name} has been deleted.`);
+                    } catch (e) {
+                        console.error("Error deleting document: ", e);
+                        showCustomAlert('Error', 'Failed to delete the member. Please try again.');
+                    }
+                });
+            };
+
+            // Function to render the family members on the page
+            const renderFamilyMembers = (familyMembers) => {
+                const list = document.getElementById('family-tree-list');
+                list.innerHTML = ''; // Clear the list first
+                if (familyMembers.length === 0) {
+                    list.innerHTML = `<p class="text-center text-gray-500">No family members added yet. Add one above!</p>`;
+                    return;
+                }
+
+                familyMembers.forEach(member => {
+                    const dobString = member.dob ? new Date(member.dob).toLocaleDateString() : 'N/A';
+                    const anniversaryString = member.anniversary ? new Date(member.anniversary).toLocaleDateString() : 'N/A';
+                    
+                    const memberDiv = document.createElement('div');
+                    memberDiv.className = 'bg-gray-100 p-6 rounded-lg shadow-md flex flex-col';
+                    memberDiv.innerHTML = `
+                        <div class="flex items-center mb-4">
+                            ${member.photoUrl ? `<img src="${member.photoUrl}" onerror="this.onerror=null;this.src='https://placehold.co/64x64/E2E8F0/94A3B8?text=no+image';" alt="${member.name}" class="w-16 h-16 rounded-full mr-4 object-cover">` : ''}
+                            <div>
+                                <h3 class="text-lg font-bold text-gray-800">${member.salutation || ''} ${member.name}</h3>
+                                <p class="text-sm text-gray-600">${member.relation || 'N/A'}</p>
+                            </div>
+                        </div>
+                        <div class="flex-grow">
+                            <ul class="text-sm text-gray-500 space-y-1">
+                                <li><strong>Gender:</strong> ${member.gender || 'N/A'}</li>
+                                <li><strong>DOB:</strong> ${dobString}</li>
+                                <li><strong>Marital Status:</strong> ${member.maritalStatus || 'N/A'}</li>
+                                ${member.maritalStatus === 'Married' ? `<li><strong>Anniversary:</strong> ${anniversaryString}</li>` : ''}
+                                ${member.maritalStatus === 'Married' && member.spouseName ? `<li><strong>Spouse:</strong> ${member.spouseName}</li>` : ''}
+                                <li><strong>Phone:</strong> ${member.phone || 'N/A'}</li>
+                                <li><strong>Email:</strong> ${member.email || 'N/A'}</li>
+                                <li><strong>Address:</strong> ${member.address || 'N/A'}</li>
+                                <li><strong>Education:</strong> ${member.education || 'N/A'}</li>
+                                <li><strong>Profession:</strong> ${member.profession || 'N/A'}</li>
+                                <li><strong>Job Location:</strong> ${member.placeOfJob || 'N/A'}</li>
+                            </ul>
+                        </div>
+                        <button class="mt-4 px-4 py-2 bg-red-500 text-white text-xs font-semibold rounded-lg hover:bg-red-600 transition duration-300 delete-btn" data-doc-id="${member.id}" data-name="${member.name}">
+                            Delete
+                        </button>
+                    `;
+                    list.appendChild(memberDiv);
+                });
+
+                // Attach event listeners to the new delete buttons
+                document.querySelectorAll('.delete-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const docId = e.target.dataset.docId;
+                        const name = e.target.dataset.name;
+                        deleteMember(docId, name);
+                    });
+                });
+            };
+
+            // --- Event Listeners ---
+            document.getElementById('add-member-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const memberData = {
+                    salutation: document.getElementById('salutation').value,
+                    name: document.getElementById('name').value,
+                    gender: document.getElementById('gender').value,
+                    dob: document.getElementById('dob').value,
+                    maritalStatus: document.getElementById('maritalStatus').value,
+                    anniversary: document.getElementById('anniversary').value,
+                    spouseName: document.getElementById('spouseName').value,
+                    relation: document.getElementById('relation').value,
+                    phone: document.getElementById('phone').value,
+                    email: document.getElementById('email').value,
+                    address: document.getElementById('address').value,
+                    photoUrl: document.getElementById('photoUrl').value,
+                    education: document.getElementById('education').value,
+                    profession: document.getElementById('profession').value,
+                    placeOfJob: document.getElementById('placeOfJob').value
+                };
+
+                addMember(memberData);
+                e.target.reset();
+            });
+
+            document.getElementById('maritalStatus').addEventListener('change', (e) => {
+                const marriageDetails = document.getElementById('marriage-details');
+                if (e.target.value === 'Married') {
+                    marriageDetails.classList.remove('hidden');
+                } else {
+                    marriageDetails.classList.add('hidden');
+                }
+            });
+
+            // Authentication form logic
+            let isSignUpMode = false;
+            document.getElementById('toggle-auth-mode').addEventListener('click', () => {
+                isSignUpMode = !isSignUpMode;
+                const submitBtn = document.getElementById('auth-submit-btn');
+                const toggleBtn = document.getElementById('toggle-auth-mode');
+                
+                if (isSignUpMode) {
+                    submitBtn.innerText = 'Sign Up';
+                    toggleBtn.innerText = 'Sign in';
+                    document.querySelector('#auth-section p').innerHTML = `Already have an account? <button id="toggle-auth-mode" class="text-blue-600 hover:text-blue-800 font-semibold">Sign in</button>`;
+                } else {
+                    submitBtn.innerText = 'Sign In';
+                    toggleBtn.innerText = 'Sign up';
+                    document.querySelector('#auth-section p').innerHTML = `Don't have an account? <button id="toggle-auth-mode" class="text-blue-600 hover:text-blue-800 font-semibold">Sign up</button>`;
+                }
+                // Re-add event listener to the new button
+                document.getElementById('toggle-auth-mode').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    isSignUpMode = !isSignUpMode;
+                    updateAuthUI();
+                });
+            });
+
+            function updateAuthUI() {
+                const submitBtn = document.getElementById('auth-submit-btn');
+                const paragraph = document.querySelector('#auth-section p');
+                if (isSignUpMode) {
+                    submitBtn.innerText = 'Sign Up';
+                    paragraph.innerHTML = `Already have an account? <button id="toggle-auth-mode" class="text-blue-600 hover:text-blue-800 font-semibold">Sign in</button>`;
+                } else {
+                    submitBtn.innerText = 'Sign In';
+                    paragraph.innerHTML = `Don't have an account? <button id="toggle-auth-mode" class="text-blue-600 hover:text-blue-800 font-semibold">Sign up</button>`;
+                }
+                document.getElementById('toggle-auth-mode').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    isSignUpMode = !isSignUpMode;
+                    updateAuthUI();
+                });
+            }
+
+            document.getElementById('auth-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('auth-email').value;
+                const password = document.getElementById('auth-password').value;
+
+                try {
+                    if (isSignUpMode) {
+                        await createUserWithEmailAndPassword(auth, email, password);
+                        showCustomAlert('Success', 'Account created successfully! You are now signed in.');
+                    } else {
+                        await signInWithEmailAndPassword(auth, email, password);
+                        showCustomAlert('Success', 'Signed in successfully!');
+                    }
+                } catch (error) {
+                    console.error("Authentication error:", error);
+                    let errorMessage = 'An error occurred during authentication.';
+                    if (error.code) {
+                        // Firebase specific error codes
+                        switch(error.code) {
+                            case 'auth/email-already-in-use':
+                                errorMessage = 'This email is already in use.';
+                                break;
+                            case 'auth/invalid-email':
+                                errorMessage = 'The email address is not valid.';
+                                break;
+                            case 'auth/weak-password':
+                                errorMessage = 'The password must be at least 6 characters long.';
+                                break;
+                            case 'auth/user-not-found':
+                            case 'auth/wrong-password':
+                                errorMessage = 'Invalid email or password.';
+                                break;
+                            default:
+                                errorMessage = error.message;
+                                break;
+                        }
+                    }
+                    showCustomAlert('Authentication Error', errorMessage);
+                }
+            });
+
+            document.getElementById('logout-btn').addEventListener('click', async () => {
+                try {
+                    await signOut(auth);
+                    showCustomAlert('Logged Out', 'You have been successfully logged out.');
+                } catch (error) {
+                    console.error("Error signing out:", error);
+                    showCustomAlert('Error', 'Failed to log out. Please try again.');
+                }
+            });
+
+            // Initial state: app container is invisible to prevent flash of unstyled content
+            appContainer.style.opacity = 0;
+            // A simple way to check for a user on page load without waiting for the full auth state change.
+            const user = auth.currentUser;
+            if (user) {
+                showAppContent(user);
+            } else {
+                showAppContent(null);
+            }
+        })();
+    </script>
